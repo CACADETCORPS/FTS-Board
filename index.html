@@ -269,6 +269,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <div class="modal-actions">
       <button class="modal-save" onclick="saveEdit()">SAVE CHANGES</button>
       <button class="modal-cancel" onclick="closeModal()">CANCEL</button>
+      <button class="modal-archive" id="modal-archive-btn" onclick="archiveFromModal()" style="font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:8px 20px;background:none;color:var(--text2);border:1px solid var(--border);border-radius:4px;cursor:pointer;display:none">📦 ARCHIVE</button>
       <button class="modal-delete" onclick="deleteFromModal()">DELETE</button>
     </div>
   </div>
@@ -344,6 +345,7 @@ function rebuildAssigneeOpts(sel, selected){
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 let tasks        = [];
+let archivedTasks = [];
 let localStatus  = {};
 let localSection = {};
 let localAssignee= {};
@@ -363,7 +365,7 @@ function setSyncState(s){
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 function saveLocal(){
   try{
-    localStorage.setItem(KEY,JSON.stringify({tasks,localStatus,localSection,localAssignee,localPriority,localDue,localNotes,customSections,customAssignees}));
+    localStorage.setItem(KEY,JSON.stringify({tasks,localStatus,localSection,localAssignee,localPriority,localDue,localNotes,customSections,customAssignees,archivedTasks}));
   }catch(e){}
 }
 
@@ -371,6 +373,7 @@ function loadLocal(){
   try{
     const d=JSON.parse(localStorage.getItem(KEY)||'{}');
     tasks         = d.tasks        || [];
+    archivedTasks = d.archivedTasks || [];
     localStatus   = d.localStatus  || {};
     localSection  = d.localSection || {};
     localAssignee = d.localAssignee|| {};
@@ -404,6 +407,7 @@ async function fetchAll(){
     if(d.ok){
       // Worker is authoritative
       if(d.tasks)        tasks         = d.tasks;
+      if(d.archivedTasks) archivedTasks = d.archivedTasks;
       if(d.statuses)     localStatus   = {...localStatus,...d.statuses};
       if(d.sections)     localSection  = {...localSection,...d.sections};
       if(d.assignees)    localAssignee = {...localAssignee,...d.assignees};
@@ -538,6 +542,30 @@ function render(){
     return;
   }
 
+  // Build archive section HTML
+  const archiveHTML = archivedTasks.length ? `
+    <div class="section-group" style="margin-top:24px;opacity:.8">
+      <div class="section-header" style="cursor:pointer" onclick="this.nextElementSibling.nextElementSibling.style.display=this.nextElementSibling.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="section-title" style="color:var(--text3)">📦 ARCHIVE <span style="font-size:12px;font-weight:400">(${archivedTasks.length} tasks)</span></div>
+        <div class="section-count" style="color:var(--text3)">click to expand/collapse</div>
+      </div>
+      <div style="height:2px;background:var(--border2)"></div>
+      <div style="display:none">
+        ${archivedTasks.map((a,i)=>`
+        <div style="display:grid;grid-template-columns:1fr 160px 140px 130px 90px 80px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;background:var(--bg);align-items:center;opacity:.7">
+          <div>
+            <div style="font-size:13px;color:var(--text2);text-decoration:line-through">${a.task}</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px">ARCHIVED ${a.archivedAt}</div>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3)">${a.section||'—'}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3)">${a.assignee||'—'}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--green)">✓ COMPLETE</div>
+          <button onclick="restoreArchive(${i})" style="font-family:var(--mono);font-size:9px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">RESTORE</button>
+          <button onclick="deleteArchive(${i})" style="font-family:var(--mono);font-size:9px;padding:3px 8px;background:none;border:1px solid rgba(248,81,73,.3);border-radius:3px;color:var(--red);cursor:pointer">DELETE</button>
+        </div>`).join('')}
+      </div>
+    </div>` : '';
+
   el.innerHTML = sortedSections.map(sec=>{
     const secTasks = bySection[sec];
     const secLabel = sec==='_unassigned'?'UNASSIGNED':sec;
@@ -592,7 +620,7 @@ function render(){
       </div>
       ${rows}
     </div>`;
-  }).join('');
+  }).join('') + archiveHTML;
 }
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
@@ -715,6 +743,9 @@ function openModal(id){
   rebuildAssigneeOpts(eAss, '');
   document.getElementById('edit-task-assignee').value = getAssignee(id);
 
+  // Show archive button only for completed tasks
+  const archBtn = document.getElementById('modal-archive-btn');
+  if(archBtn) archBtn.style.display = getStatus(id)==='done' ? 'inline-block' : 'none';
   document.getElementById('edit-modal').style.display='flex';
   setTimeout(()=>document.getElementById('edit-task-name').focus(),50);
 }
@@ -798,6 +829,58 @@ function updateDateDisplay(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+function archiveFromModal(){
+  if(!editingId) return;
+  const id = editingId;
+  const t  = tasks.find(t=>t.id===id);
+  if(!t) return;
+  if(!confirm('Archive "'+t.task+'"?\n\nIt will move to the Archive section at the bottom.')) return;
+  const entry = {
+    id, task:t.task,
+    section:  getSection(id),
+    assignee: getAssignee(id),
+    due:      getDue(id),
+    notes:    getNotes(id),
+    priority: getPriority(id),
+    archivedAt: new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})
+  };
+  archivedTasks.push(entry);
+  tasks = tasks.filter(t=>t.id!==id);
+  delete localStatus[id]; delete localSection[id]; delete localAssignee[id];
+  delete localPriority[id]; delete localDue[id]; delete localNotes[id];
+  saveLocal();
+  pushToWorker('sync_archive', archivedTasks);
+  pushToWorker('delete_task', {id});
+  closeModal();
+  render(); updateStats();
+}
+
+function restoreArchive(idx){
+  if(!confirm('Restore this task back to active?')) return;
+  const entry = archivedTasks[idx];
+  const id = entry.id+'_r'+Date.now();
+  tasks.push({id, task:entry.task});
+  localSection[id]  = entry.section||'';
+  localAssignee[id] = entry.assignee||'';
+  localDue[id]      = entry.due||'';
+  localNotes[id]    = entry.notes||'';
+  localPriority[id] = entry.priority||'standard';
+  localStatus[id]   = 'open';
+  archivedTasks.splice(idx,1);
+  saveLocal();
+  pushToWorker('add_task',{id,task:entry.task,section:entry.section,assignee:entry.assignee,due:entry.due,priority:entry.priority});
+  pushToWorker('sync_archive', archivedTasks);
+  render(); updateStats();
+}
+
+function deleteArchive(idx){
+  if(!confirm('Permanently delete this archived task?')) return;
+  archivedTasks.splice(idx,1);
+  saveLocal();
+  pushToWorker('sync_archive', archivedTasks);
+  render();
+}
+
 function initBoard(){
   updateDateDisplay();
   loadLocal();
