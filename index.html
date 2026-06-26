@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full Time Staff Task Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--border2:#21262d;
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --gold:#d2991f;--amber:#d29922;--green:#3fb950;--red:#f85149;--ops:#58a6ff;
+  --log:#3fb950;--dd:#f78166;--purple:#bc8cff;--teal:#39d353;
+  --mono:'Share Tech Mono',monospace;--sans:'Barlow',sans-serif;--cond:'Barlow Condensed',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px}
+.header-left h1{font-family:var(--cond);font-size:28px;font-weight:700;letter-spacing:1px}
+.header-left h1 span{color:var(--gold)}
+.header-sub{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:2px;margin-top:2px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:6px;transition:background .3s}
+.sync-dot.ok{background:var(--green)}
+.sync-dot.loading{background:var(--amber)}
+.sync-dot.err{background:var(--red)}
+.sync-dot.local{background:var(--text3)}
+.sync-label{font-family:var(--mono);font-size:10px;color:var(--text2)}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 16px}
+.stat-label{font-family:var(--mono);font-size:9px;color:var(--text2);letter-spacing:2px;margin-bottom:6px}
+.stat-val{font-family:var(--cond);font-size:30px;font-weight:700;line-height:1}
+.stat-sub{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:4px}
+.stat-card.complete .stat-val{color:var(--green)}
+.stat-card.active .stat-val{color:var(--amber)}
+.stat-card.overdue .stat-val{color:var(--red)}
+.stat-card.unassigned .stat-val{color:var(--red)}
+/* PROGRESS */
+.progress-bar{height:3px;background:var(--border);margin:0}
+.progress-fill{height:100%;background:var(--green);transition:width .5s}
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 20px;background:var(--surface);overflow-x:auto}
+.tab{font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:10px 16px;border:none;background:none;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+/* PANELS */
+.panel{display:none;padding:16px 20px}
+.panel.active{display:block}
+/* CONTROLS */
+.controls-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.ctrl-input{font-family:var(--mono);font-size:12px;flex:1;min-width:200px;padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text)}
+.ctrl-input:focus{outline:none;border-color:var(--gold)}
+.ctrl-select{font-family:var(--mono);font-size:11px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);cursor:pointer}
+/* ADD TASK */
+.add-task-bar{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.add-task-bar input,.add-task-bar select{font-family:var(--mono);font-size:12px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)}
+.add-task-bar input:focus,.add-task-bar select:focus{outline:none;border-color:var(--gold)}
+.add-btn{font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:7px 14px;background:var(--gold);color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:700;white-space:nowrap}
+.add-btn:hover{background:#e6a820}
+/* SECTION GROUP */
+.section-group{margin-bottom:20px}
+.section-header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:4px 4px 0 0;margin-bottom:0}
+.section-title{font-family:var(--cond);font-size:16px;font-weight:700;letter-spacing:1px}
+.section-count{font-family:var(--mono);font-size:10px;color:var(--text2)}
+.section-progress{height:2px;background:var(--border)}
+.section-progress-fill{height:100%;transition:width .5s}
+/* TASK ROW */
+.task-row{display:grid;grid-template-columns:32px 1fr 110px 110px 90px 70px 80px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
+.task-row:hover{background:var(--surface2)}
+.task-row.done-row{opacity:.5}
+.task-check{width:18px;height:18px;cursor:pointer;accent-color:var(--green)}
+.task-name{font-size:14px;color:var(--text);line-height:1.4}
+.task-due{font-family:var(--mono);font-size:10px;color:var(--text2)}
+.task-due.overdue{color:var(--red);font-weight:700}
+.task-due.due-soon{color:var(--amber)}
+.task-due.no-date{color:var(--text3)}
+.owner-select{font-family:var(--mono);font-size:10px;padding:2px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text2);width:100%;cursor:pointer}
+.owner-select:focus{outline:none;border-color:var(--gold);color:var(--text)}
+.owner-select.assigned{font-weight:700}
+.assigned-select{font-family:var(--mono);font-size:10px;padding:2px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text2);width:100%;cursor:pointer}
+.assigned-select:focus{outline:none;border-color:var(--gold)}
+.pri-select{font-family:var(--mono);font-size:9px;padding:2px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer}
+.pri-select.urgent{color:#ff4444;border-color:rgba(255,68,68,.4);background:rgba(255,68,68,.08)}
+.pri-select.priority{color:var(--amber);border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.08)}
+.status-pill{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 7px;border-radius:3px;border:1px solid var(--border);color:var(--text3);cursor:pointer;white-space:nowrap}
+.status-pill.open{color:var(--text2);border-color:var(--border)}
+.status-pill.started{color:var(--amber);border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.06)}
+.status-pill.done{color:var(--green);border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.06)}
+.edit-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px}
+.edit-btn:hover{color:var(--gold)}
+/* PRIORITY BADGES */
+.pri-urgent{color:#ff4444;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;padding:1px 5px;border:1px solid rgba(255,68,68,.4);border-radius:3px;background:rgba(255,68,68,.08);margin-right:4px}
+.pri-priority{color:var(--amber);font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;padding:1px 5px;border:1px solid rgba(210,153,34,.4);border-radius:3px;background:rgba(210,153,34,.08);margin-right:4px}
+/* OFFLINE BANNER */
+.offline-banner{display:none;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);color:var(--red);font-family:var(--mono);font-size:11px;padding:8px 20px;letter-spacing:1px}
+.offline-banner.show{display:block}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;width:min(560px,95vw);max-height:90vh;overflow-y:auto}
+.modal-title{font-family:var(--cond);font-size:18px;font-weight:700;letter-spacing:1px;color:var(--gold);margin-bottom:16px}
+.modal-lbl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text2);margin:12px 0 4px}
+.modal input,.modal textarea,.modal select{width:100%;font-family:var(--mono);font-size:12px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)}
+.modal input:focus,.modal textarea:focus,.modal select:focus{outline:none;border-color:var(--gold)}
+.modal textarea{min-height:70px;resize:vertical}
+.modal-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+.modal-save{font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:8px 20px;background:var(--gold);color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:700}
+.modal-save:hover{background:#e6a820}
+.modal-cancel{font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:8px 20px;background:none;color:var(--text2);border:1px solid var(--border);border-radius:4px;cursor:pointer}
+.modal-delete{font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:8px 20px;background:none;color:var(--red);border:1px solid rgba(248,81,73,.3);border-radius:4px;cursor:pointer;margin-left:auto}
+/* QR */
+.qr-section{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:20px}
+.qr-dl-btn{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:6px 14px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer}
+.qr-dl-btn:hover{border-color:var(--gold);color:var(--gold)}
+/* STATUS filter checkboxes */
+#f-status-group label{font-family:var(--mono);font-size:10px;display:flex;align-items:center;gap:4px;cursor:pointer}
+@media(max-width:768px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .task-row{grid-template-columns:28px 1fr 80px 22px;gap:6px}
+  .task-row .owner-select,.task-row .assigned-select,.task-row .pri-select,.task-row .status-pill{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-sub">CALIFORNIA CADET CORPS &middot; FULL TIME STAFF</div>
+    <h1>FTS <span>Task Board</span></h1>
+    <div class="header-sub" id="date-display" style="margin-top:4px"></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <span class="sync-dot local" id="sync-dot"></span>
+    <span class="sync-label" id="sync-label">CONNECTING...</span>
+  </div>
+</div>
+
+<div class="offline-banner" id="offline-banner">WARNING: OFFLINE MODE — Changes saved locally. Will sync when connection restores.</div>
+
+<div class="stats" id="stats-bar">
+  <div class="stat-card"><div class="stat-label">TOTAL</div><div class="stat-val" id="s-total">0</div></div>
+  <div class="stat-card complete"><div class="stat-label">COMPLETE</div><div class="stat-val" id="s-done">0</div><div class="stat-sub" id="s-pct">0% complete</div></div>
+  <div class="stat-card active"><div class="stat-label">ACTIVE</div><div class="stat-val" id="s-active">0</div></div>
+  <div class="stat-card overdue"><div class="stat-label">OVERDUE</div><div class="stat-val" id="s-overdue">0</div></div>
+  <div class="stat-card unassigned"><div class="stat-label">UNASSIGNED</div><div class="stat-val" id="s-unassigned">0</div></div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('tasks',this)">TASKS</button>
+  <button class="tab" onclick="showTab('qr',this)">QR CODE</button>
+</div>
+
+<!-- TASKS PANEL -->
+<div class="panel active" id="panel-tasks">
+
+  <!-- ADD TASK -->
+  <div class="add-task-bar">
+    <input type="text" id="new-task-name" placeholder="Task description..." style="flex:2;min-width:200px">
+    <select id="new-task-section" onchange="if(this.value==='__new__'){const nv=prompt('New section name:');if(nv&&nv.trim()){const v=addCustomSection(nv);rebuildSelectOpts(this,v,'-- Section --');}else{this.value='';}}" style="min-width:160px">
+      <option value="">-- Section --</option>
+      <option>Administrative NCO</option>
+      <option>Budget Analyst</option>
+      <option>Logistics</option>
+      <option>Operations</option>
+      <option>Program Support Manager</option>
+      <option>Program Support NCO</option>
+      <option>Staff Supervisor</option>
+      <option value="__new__">+ Add new...</option>
+    </select>
+    <select id="new-task-assignee" onchange="if(this.value==='__new__'){const nv=prompt('New assignee name:');if(nv&&nv.trim()){const v=addCustomAssignee(nv);rebuildAssigneeOpts(this,v);}else{this.value='';}}" style="min-width:130px">
+      <option value="">-- Assignee --</option>
+      <option value="__new__">+ Add name...</option>
+    </select>
+    <input type="date" id="new-task-due" title="Due date (optional)" style="min-width:130px">
+    <select id="new-task-pri" style="min-width:100px">
+      <option value="standard">STANDARD</option>
+      <option value="priority">PRIORITY</option>
+      <option value="urgent">URGENT</option>
+    </select>
+    <button class="add-btn" onclick="addNewTask()">+ ADD TASK</button>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="controls-bar">
+    <input class="ctrl-input" type="text" id="search" placeholder="Search tasks..." oninput="render()">
+    <select class="ctrl-select" id="f-section" onchange="render()">
+      <option value="">All sections</option>
+    </select>
+    <select class="ctrl-select" id="f-assignee" onchange="render()">
+      <option value="">All assignees</option>
+    </select>
+    <div id="f-status-group" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px">
+      <label style="color:var(--text2)"><input type="checkbox" id="fs-open" checked onchange="render()"> PENDING</label>
+      <label style="color:var(--amber)"><input type="checkbox" id="fs-started" checked onchange="render()"> ACTIVE</label>
+      <label style="color:var(--green)"><input type="checkbox" id="fs-done" checked onchange="render()"> COMPLETE</label>
+    </div>
+  </div>
+
+  <div id="task-list"></div>
+</div>
+
+<!-- QR PANEL -->
+<div class="panel" id="panel-qr">
+  <div class="qr-section" style="text-align:center;padding:24px">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:2px;margin-bottom:16px">FTS BOARD — SHARE WITH STAFF</div>
+    <div id="qr-canvas-wrap" style="background:#fff;padding:16px;border-radius:6px;display:inline-block;margin-bottom:16px"></div>
+    <div style="font-family:var(--mono);font-size:12px;color:var(--ops);word-break:break-all;margin-bottom:16px;line-height:1.6" id="board-url-display"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="qr-dl-btn" onclick="copyBoardLink()">COPY LINK</button>
+      <button class="qr-dl-btn" onclick="textBoardLink()" style="border-color:rgba(88,166,255,.3);color:var(--ops)">TEXT LINK</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">EDIT TASK</div>
+    <div class="modal-lbl">TASK NAME</div>
+    <input type="text" id="edit-task-name" placeholder="Task description...">
+    <div class="modal-lbl">NOTES</div>
+    <textarea id="edit-task-notes" placeholder="Additional notes..."></textarea>
+    <div class="modal-lbl">SECTION</div>
+    <select id="edit-task-section" onchange="if(this.value==='__new__'){const nv=prompt('New section name:');if(nv&&nv.trim()){const v=addCustomSection(nv);rebuildSelectOpts(this,v,'-- Section --');}else{this.value='';}}" style="width:100%;font-family:var(--mono);font-size:12px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+      <option value="">-- Section --</option>
+    </select>
+    <div class="modal-lbl">ASSIGNED TO</div>
+    <div style="display:flex;gap:6px">
+      <select id="edit-task-assignee-sel" style="flex:1;font-family:var(--mono);font-size:12px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)"
+        onchange="if(this.value==='__new__'){const nv=prompt('New assignee name:');if(nv&&nv.trim()){const v=addCustomAssignee(nv);document.getElementById('edit-task-assignee').value=v;this.value='';}else{this.value='';}}else if(this.value){document.getElementById('edit-task-assignee').value=this.value;this.value='';}">
+        <option value="">— pick person —</option>
+      </select>
+      <input type="text" id="edit-task-assignee" placeholder="or type name..." style="flex:2;font-family:var(--mono);font-size:12px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+    </div>
+    <div class="modal-lbl">DUE DATE <span style="color:var(--text3);font-size:9px">(optional)</span></div>
+    <input type="date" id="edit-task-due">
+    <div class="modal-lbl">PRIORITY</div>
+    <select id="edit-task-pri" style="width:100%;font-family:var(--mono);font-size:12px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+      <option value="standard">STANDARD</option>
+      <option value="priority">PRIORITY</option>
+      <option value="urgent">URGENT</option>
+    </select>
+    <div class="modal-actions">
+      <button class="modal-save" onclick="saveEdit()">SAVE CHANGES</button>
+      <button class="modal-cancel" onclick="closeModal()">CANCEL</button>
+      <button class="modal-delete" onclick="deleteFromModal()">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const WORKER_URL = 'https://fts-board.dustindionne.workers.dev';
+const BOARD_URL  = 'https://cacadetcorps.github.io/TFS-Board/';
+const KEY        = 'fts_board_v1';
+
+// ── SECTIONS & ASSIGNEES ──────────────────────────────────────────────────────
+const BASE_SECTIONS = ['Administrative NCO','Budget Analyst','Logistics','Operations','Program Support Manager','Program Support NCO','Staff Supervisor'];
+let customSections  = [];
+let customAssignees = [];
+let SECTIONS  = [...BASE_SECTIONS];
+let ASSIGNEES = [];
+
+function allSections()  { return [...SECTIONS].sort((a,b)=>a.localeCompare(b)); }
+function allAssignees() { return [...ASSIGNEES].sort((a,b)=>a.localeCompare(b)); }
+
+function ownerColor(s){
+  const map={
+    'Program Support Manager':'var(--ops)',
+    'Staff Supervisor':'var(--amber)',
+    'Operations':'var(--green)',
+    'Logistics':'var(--purple)',
+    'Budget Analyst':'var(--teal)',
+    'Program Support NCO':'var(--dd)',
+    'Administrative NCO':'#bc8cff',
+  };
+  return map[s]||'var(--text2)';
+}
+
+function addCustomSection(val){
+  val = val.trim();
+  if(!val||SECTIONS.includes(val)) return val;
+  customSections.push(val);
+  SECTIONS = [...new Set([...BASE_SECTIONS,...customSections])];
+  saveLocal();
+  document.querySelectorAll('.owner-select, #new-task-section, #edit-task-section').forEach(sel=>{
+    rebuildSelectOpts(sel, sel.value, sel.classList.contains('owner-select')?'-- Section --':'-- Section --');
+  });
+  populateFilters();
+  return val;
+}
+
+function addCustomAssignee(val){
+  val = val.trim();
+  if(!val||ASSIGNEES.includes(val)) return val;
+  customAssignees.push(val);
+  ASSIGNEES = [...new Set([...customAssignees])];
+  saveLocal();
+  document.querySelectorAll('.assigned-select, #new-task-assignee, #edit-task-assignee-sel').forEach(sel=>{
+    rebuildAssigneeOpts(sel, sel.value);
+  });
+  populateFilters();
+  return val;
+}
+
+function rebuildSelectOpts(sel, selected, placeholder){
+  placeholder = placeholder || '-- Section --';
+  sel.innerHTML = `<option value="">${placeholder}</option>` +
+    allSections().map(s=>`<option value="${s}"${s===selected?' selected':''}>${s}</option>`).join('') +
+    `<option value="__new__">+ Add new...</option>`;
+}
+
+function rebuildAssigneeOpts(sel, selected){
+  sel.innerHTML = `<option value="">— pick person —</option>` +
+    allAssignees().map(a=>`<option value="${a}"${a===selected?' selected':''}>${a}</option>`).join('') +
+    `<option value="__new__">+ Add name...</option>`;
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+let tasks        = [];
+let localStatus  = {};
+let localSection = {};
+let localAssignee= {};
+let localPriority= {};
+let localDue     = {};
+let localNotes   = {};
+let editingId    = null;
+
+// ── SYNC STATE ────────────────────────────────────────────────────────────────
+function setSyncState(s){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  dot.className='sync-dot '+s;
+  lbl.textContent={ok:'CONNECTED',loading:'SYNCING...',err:'OFFLINE',local:'LOCAL ONLY'}[s]||s.toUpperCase();
+}
+
+// ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
+function saveLocal(){
+  try{
+    localStorage.setItem(KEY,JSON.stringify({tasks,localStatus,localSection,localAssignee,localPriority,localDue,localNotes,customSections,customAssignees}));
+  }catch(e){}
+}
+
+function loadLocal(){
+  try{
+    const d=JSON.parse(localStorage.getItem(KEY)||'{}');
+    tasks         = d.tasks        || [];
+    localStatus   = d.localStatus  || {};
+    localSection  = d.localSection || {};
+    localAssignee = d.localAssignee|| {};
+    localPriority = d.localPriority|| {};
+    localDue      = d.localDue     || {};
+    localNotes    = d.localNotes   || {};
+    if(d.customSections){
+      customSections=d.customSections;
+      SECTIONS=[...new Set([...BASE_SECTIONS,...customSections])];
+    }
+    if(d.customAssignees){
+      customAssignees=d.customAssignees;
+      ASSIGNEES=[...new Set([...customAssignees])];
+    }
+  }catch(e){}
+}
+
+// ── WORKER PUSH ───────────────────────────────────────────────────────────────
+function pushToWorker(action, data){
+  if(!WORKER_URL) return;
+  fetch(WORKER_URL,{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action,data})}).catch(()=>{});
+}
+
+// ── FETCH FROM WORKER ─────────────────────────────────────────────────────────
+async function fetchAll(){
+  setSyncState('loading');
+  try{
+    const r = await fetch(WORKER_URL);
+    const d = await r.json();
+    if(d.ok){
+      // Worker is authoritative
+      if(d.tasks)        tasks         = d.tasks;
+      if(d.statuses)     localStatus   = {...localStatus,...d.statuses};
+      if(d.sections)     localSection  = {...localSection,...d.sections};
+      if(d.assignees)    localAssignee = {...localAssignee,...d.assignees};
+      if(d.priorities)   localPriority = {...localPriority,...d.priorities};
+      if(d.dues)         localDue      = {...localDue,...d.dues};
+      if(d.notes)        localNotes    = {...localNotes,...d.notes};
+      if(d.customSections&&d.customSections.length){
+        customSections=[...new Set([...customSections,...d.customSections])];
+        SECTIONS=[...new Set([...BASE_SECTIONS,...customSections])];
+      }
+      if(d.customAssignees&&d.customAssignees.length){
+        customAssignees=[...new Set([...customAssignees,...d.customAssignees])];
+        ASSIGNEES=[...new Set([...customAssignees])];
+      }
+      saveLocal();
+      populateFilters();
+      render();
+      updateStats();
+      setSyncState('ok');
+      document.getElementById('offline-banner').classList.remove('show');
+    }
+  }catch(e){
+    setSyncState('err');
+    document.getElementById('offline-banner').classList.add('show');
+  }
+}
+
+// ── TASK HELPERS ──────────────────────────────────────────────────────────────
+function getStatus(id)   { return localStatus[id]  || 'open'; }
+function getSection(id)  { return localSection[id]  || ''; }
+function getAssignee(id) { return localAssignee[id] || ''; }
+function getPriority(id) { return localPriority[id] || 'standard'; }
+function getDue(id)      { return localDue[id]      || ''; }
+function getNotes(id)    { return localNotes[id]    || ''; }
+
+function dueDateClass(due){
+  if(!due) return 'no-date';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(due+'T00:00:00');
+  const diff = Math.round((d-today)/(1000*60*60*24));
+  if(diff < 0) return 'overdue';
+  if(diff <= 3) return 'due-soon';
+  return '';
+}
+
+function formatDue(due){
+  if(!due) return '';
+  const d = new Date(due+'T00:00:00');
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
+}
+
+// ── POPULATE FILTERS ──────────────────────────────────────────────────────────
+function populateFilters(){
+  const fSec = document.getElementById('f-section');
+  const cur  = fSec.value;
+  fSec.innerHTML = '<option value="">All sections</option>' +
+    allSections().map(s=>`<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
+
+  const fAss = document.getElementById('f-assignee');
+  const curA = fAss.value;
+  fAss.innerHTML = '<option value="">All assignees</option>' +
+    allAssignees().map(a=>`<option value="${a}"${a===curA?' selected':''}>${a}</option>`).join('');
+
+  // Also rebuild add/edit dropdowns
+  const nt = document.getElementById('new-task-section');
+  if(nt) rebuildSelectOpts(nt, nt.value, '-- Section --');
+  const na = document.getElementById('new-task-assignee');
+  if(na) rebuildAssigneeOpts(na, na.value);
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+const STATUS_ORDER = {'open':0,'started':1,'done':2};
+const PRI_ORDER    = {'urgent':0,'priority':1,'standard':2};
+
+function render(){
+  const search   = document.getElementById('search').value.toLowerCase();
+  const fSection = document.getElementById('f-section').value;
+  const fAssignee= document.getElementById('f-assignee').value;
+  const fsOpen   = document.getElementById('fs-open')?.checked??true;
+  const fsStarted= document.getElementById('fs-started')?.checked??true;
+  const fsDone   = document.getElementById('fs-done')?.checked??true;
+
+  // Filter tasks
+  const filtered = tasks.filter(t=>{
+    const st  = getStatus(t.id);
+    const sec = getSection(t.id);
+    const ass = getAssignee(t.id);
+    if(st==='open'    && !fsOpen)    return false;
+    if(st==='started' && !fsStarted) return false;
+    if(st==='done'    && !fsDone)    return false;
+    if(fSection  && sec!==fSection)  return false;
+    if(fAssignee && ass!==fAssignee) return false;
+    if(search && !t.task.toLowerCase().includes(search) && !getNotes(t.id).toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  // Group by section
+  const bySection = {};
+  filtered.forEach(t=>{
+    const sec = getSection(t.id)||'_unassigned';
+    if(!bySection[sec]) bySection[sec]=[];
+    bySection[sec].push(t);
+  });
+
+  // Sort within each section: status → priority → due date
+  Object.keys(bySection).forEach(sec=>{
+    bySection[sec].sort((a,b)=>{
+      const as=getStatus(a.id), bs=getStatus(b.id);
+      const sd=(STATUS_ORDER[as]??0)-(STATUS_ORDER[bs]??0);
+      if(sd!==0) return sd;
+      const pd=(PRI_ORDER[getPriority(a.id)]??2)-(PRI_ORDER[getPriority(b.id)]??2);
+      if(pd!==0) return pd;
+      // Sort by due date ascending (no date = last)
+      const ad=getDue(a.id)||'9999', bd=getDue(b.id)||'9999';
+      return ad.localeCompare(bd);
+    });
+  });
+
+  // Sort sections — unassigned last
+  const sectionOrder = allSections();
+  const sortedSections = Object.keys(bySection).sort((a,b)=>{
+    if(a==='_unassigned') return 1;
+    if(b==='_unassigned') return -1;
+    return sectionOrder.indexOf(a)-sectionOrder.indexOf(b);
+  });
+
+  const el = document.getElementById('task-list');
+  if(!filtered.length){
+    el.innerHTML='<div style="font-family:var(--mono);font-size:12px;color:var(--text3);padding:30px;text-align:center">No tasks match current filters.</div>';
+    return;
+  }
+
+  el.innerHTML = sortedSections.map(sec=>{
+    const secTasks = bySection[sec];
+    const secLabel = sec==='_unassigned'?'UNASSIGNED':sec;
+    const done     = secTasks.filter(t=>getStatus(t.id)==='done').length;
+    const pct      = secTasks.length?Math.round(100*done/secTasks.length):0;
+    const color    = sec==='_unassigned'?'var(--red)':ownerColor(sec);
+
+    const rows = secTasks.map(t=>{
+      const id  = t.id;
+      const st  = getStatus(id);
+      const pri = getPriority(id);
+      const due = getDue(id);
+      const dueClass = dueDateClass(due);
+      const dueStr   = due ? formatDue(due) : '—';
+      const ass = getAssignee(id);
+
+      const secOpts = '<option value="">-- Section --</option>'+allSections().map(s=>`<option value="${s}"${getSection(id)===s?' selected':''}>${s}</option>`).join('')+'<option value="__new__">+ Add new...</option>';
+      const assOpts = '<option value="">— assignee —</option>'+allAssignees().map(a=>`<option value="${a}"${ass===a?' selected':''}>${a}</option>`).join('')+'<option value="__new__">+ Add name...</option>';
+
+      return `<div class="task-row${st==='done'?' done-row':''}">
+        <input type="checkbox" class="task-check" ${st==='done'?'checked':''} onchange="cycleStatus('${id}',this.checked)">
+        <div class="task-name">${pri!=='standard'?`<span class="pri-${pri}">${pri.toUpperCase()}</span> `:''}${t.task}${getNotes(id)?`<div style="font-family:var(--mono);font-size:10px;color:#8b9eb0;margin-top:2px">${getNotes(id)}</div>`:''}</div>
+        <select class="owner-select assigned" onchange="changeSection('${id}',this.value)">${secOpts}</select>
+        <select class="assigned-select" onchange="changeAssignee('${id}',this.value)">${assOpts}</select>
+        <div class="task-due ${dueClass}" title="${due||'No due date'}">${dueStr}</div>
+        <select class="pri-select${pri!=='standard'?' '+pri:''}" onchange="changePriority('${id}',this.value)">
+          <option value="standard"${pri==='standard'?' selected':''}>STANDARD</option>
+          <option value="priority"${pri==='priority'?' selected':''}>PRIORITY</option>
+          <option value="urgent"${pri==='urgent'?' selected':''}>URGENT</option>
+        </select>
+        <div class="status-pill ${st}" onclick="cycleStatusPill('${id}')">${{open:'PENDING',started:'ACTIVE',done:'COMPLETE'}[st]}</div>
+        <button class="edit-btn" onclick="editTask('${id}')" title="Edit / Delete">&#9998;</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="section-group">
+      <div class="section-header">
+        <div class="section-title" style="color:${color}">${secLabel}</div>
+        <div class="section-count">${done}/${secTasks.length} complete</div>
+      </div>
+      <div class="section-progress"><div class="section-progress-fill" style="width:${pct}%;background:${color}"></div></div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function updateStats(){
+  const total    = tasks.length;
+  const done     = tasks.filter(t=>getStatus(t.id)==='done').length;
+  const active   = tasks.filter(t=>getStatus(t.id)==='started').length;
+  const overdue  = tasks.filter(t=>{ const d=getDue(t.id); return d&&dueDateClass(d)==='overdue'&&getStatus(t.id)!=='done'; }).length;
+  const unassigned = tasks.filter(t=>!getSection(t.id)).length;
+  const pct      = total?Math.round(100*done/total):0;
+  document.getElementById('s-total').textContent  = total;
+  document.getElementById('s-done').textContent   = done;
+  document.getElementById('s-pct').textContent    = pct+'% complete';
+  document.getElementById('s-active').textContent = active;
+  document.getElementById('s-overdue').textContent= overdue;
+  document.getElementById('s-unassigned').textContent = unassigned;
+  document.getElementById('progress-fill').style.width = pct+'%';
+}
+
+// ── STATUS CHANGES ────────────────────────────────────────────────────────────
+function cycleStatus(id, checked){
+  localStatus[id] = checked?'done':'open';
+  saveLocal();
+  pushToWorker('bulk_status',{[id]:localStatus[id]});
+  render(); updateStats();
+}
+
+function cycleStatusPill(id){
+  const cur = getStatus(id);
+  const next = {open:'started',started:'done',done:'open'}[cur];
+  localStatus[id] = next;
+  saveLocal();
+  pushToWorker('bulk_status',{[id]:next});
+  render(); updateStats();
+}
+
+function changeSection(id, val){
+  if(val==='__new__'){
+    const nv=prompt('New section name:');
+    if(!nv||!nv.trim()) return;
+    val=addCustomSection(nv);
+  }
+  localSection[id]=val;
+  saveLocal();
+  pushToWorker('bulk_section',{[id]:val});
+  render(); updateStats();
+}
+
+function changeAssignee(id, val){
+  if(val==='__new__'){
+    const nv=prompt('New assignee name:');
+    if(!nv||!nv.trim()) return;
+    val=addCustomAssignee(nv);
+  }
+  localAssignee[id]=val;
+  saveLocal();
+  pushToWorker('bulk_assignee',{[id]:val});
+  render(); updateStats();
+}
+
+function changePriority(id, val){
+  localPriority[id]=val;
+  saveLocal();
+  pushToWorker('bulk_priority',{[id]:val});
+  render(); updateStats();
+}
+
+// ── ADD TASK ──────────────────────────────────────────────────────────────────
+function addNewTask(){
+  const name = document.getElementById('new-task-name').value.trim();
+  if(!name){document.getElementById('new-task-name').focus();return;}
+  let section  = document.getElementById('new-task-section').value;
+  let assignee = document.getElementById('new-task-assignee').value;
+  const due    = document.getElementById('new-task-due').value;
+  const pri    = document.getElementById('new-task-pri').value;
+  if(section==='__new__'){const nv=prompt('New section name:');if(nv&&nv.trim())section=addCustomSection(nv);else section='';}
+  if(assignee==='__new__'){const nv=prompt('New assignee name:');if(nv&&nv.trim())assignee=addCustomAssignee(nv);else assignee='';}
+
+  const id = 'task_'+Date.now()+'_'+Math.floor(Math.random()*9999);
+  const task = {id, task:name};
+  tasks.push(task);
+  if(section)  localSection[id]  = section;
+  if(assignee) localAssignee[id] = assignee;
+  if(due)      localDue[id]      = due;
+  if(pri!=='standard') localPriority[id] = pri;
+
+  saveLocal();
+  pushToWorker('add_task',{id,task:name,section,assignee,due,priority:pri});
+
+  document.getElementById('new-task-name').value='';
+  document.getElementById('new-task-due').value='';
+  document.getElementById('new-task-pri').value='standard';
+  populateFilters();
+  render(); updateStats();
+}
+
+// ── EDIT MODAL ────────────────────────────────────────────────────────────────
+function editTask(id){
+  fetchAll().catch(()=>{}).finally(()=>openModal(id));
+}
+
+function openModal(id){
+  const t = tasks.find(t=>t.id===id);
+  if(!t) return;
+  editingId = id;
+  document.getElementById('edit-task-name').value    = t.task;
+  document.getElementById('edit-task-notes').value   = getNotes(id);
+  document.getElementById('edit-task-due').value     = getDue(id);
+  document.getElementById('edit-task-pri').value     = getPriority(id);
+
+  const eSec = document.getElementById('edit-task-section');
+  rebuildSelectOpts(eSec, getSection(id), '-- Section --');
+
+  const eAss = document.getElementById('edit-task-assignee-sel');
+  rebuildAssigneeOpts(eAss, '');
+  document.getElementById('edit-task-assignee').value = getAssignee(id);
+
+  document.getElementById('edit-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('edit-task-name').focus(),50);
+}
+
+function closeModal(){
+  document.getElementById('edit-modal').style.display='none';
+  editingId=null;
+}
+
+function saveEdit(){
+  if(!editingId) return;
+  const id      = editingId;
+  const newName = document.getElementById('edit-task-name').value.trim();
+  const newNotes= document.getElementById('edit-task-notes').value.trim();
+  const newSec  = document.getElementById('edit-task-section').value;
+  const newAss  = document.getElementById('edit-task-assignee').value.trim();
+  const newDue  = document.getElementById('edit-task-due').value;
+  const newPri  = document.getElementById('edit-task-pri').value;
+  if(!newName) return;
+
+  const t = tasks.find(t=>t.id===id);
+  if(t) t.task = newName;
+  localNotes[id]    = newNotes;
+  localSection[id]  = newSec;
+  localAssignee[id] = newAss;
+  localDue[id]      = newDue;
+  localPriority[id] = newPri;
+
+  saveLocal();
+  pushToWorker('edit_task',{id,task:newName,notes:newNotes,section:newSec,assignee:newAss,due:newDue,priority:newPri});
+  closeModal();
+  populateFilters();
+  render(); updateStats();
+}
+
+function deleteFromModal(){
+  if(!editingId) return;
+  const id = editingId;
+  const t  = tasks.find(t=>t.id===id);
+  if(!t||!confirm(`Delete "${t.task}"?`)) return;
+  closeModal();
+  tasks = tasks.filter(t=>t.id!==id);
+  delete localStatus[id]; delete localSection[id]; delete localAssignee[id];
+  delete localPriority[id]; delete localDue[id]; delete localNotes[id];
+  saveLocal();
+  pushToWorker('delete_task',{id});
+  render(); updateStats();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(t,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  el.classList.add('active');
+  if(t==='qr') renderQR();
+}
+
+// ── QR ────────────────────────────────────────────────────────────────────────
+function renderQR(){
+  const wrap=document.getElementById('qr-canvas-wrap');
+  if(!wrap||wrap.dataset.done) return;
+  wrap.innerHTML='';
+  new QRCode(wrap,{text:BOARD_URL,width:256,height:256,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  wrap.dataset.done='1';
+  document.getElementById('board-url-display').textContent=BOARD_URL;
+}
+function copyBoardLink(){
+  navigator.clipboard.writeText(BOARD_URL).then(()=>{
+    const b=event.target;const o=b.textContent;b.textContent='COPIED!';setTimeout(()=>b.textContent=o,1500);
+  }).catch(()=>prompt('Copy this URL:',BOARD_URL));
+}
+function textBoardLink(){ window.open('sms:?body=FTS Task Board: '+BOARD_URL); }
+
+// ── DATE DISPLAY ──────────────────────────────────────────────────────────────
+function updateDateDisplay(){
+  const now=new Date();
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('date-display').textContent=days[now.getDay()].toUpperCase()+' · '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function initBoard(){
+  updateDateDisplay();
+  loadLocal();
+  populateFilters();
+  render();
+  updateStats();
+  fetchAll();
+  setInterval(fetchAll,15000);
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',initBoard);
+} else {
+  initBoard();
+}
+</script>
+</body>
+</html>
