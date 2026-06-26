@@ -53,7 +53,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .panel{display:none;padding:16px 20px}
 .panel.active{display:block}
 /* CONTROLS */
-.controls-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.controls-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.col-headers{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:32px 1fr 160px 140px 100px 90px 22px;gap:8px;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;margin-bottom:4px}
+.col-header{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--text3);text-transform:uppercase}
 .ctrl-input{font-family:var(--mono);font-size:12px;flex:1;min-width:200px;padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text)}
 .ctrl-input:focus{outline:none;border-color:var(--gold)}
 .ctrl-select{font-family:var(--mono);font-size:11px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);cursor:pointer}
@@ -71,7 +73,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .section-progress{height:2px;background:var(--border)}
 .section-progress-fill{height:100%;transition:width .5s}
 /* TASK ROW */
-.task-row{display:grid;grid-template-columns:32px 1fr 160px 140px 100px 90px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
+.task-row{display:grid;grid-template-columns:32px 1fr 160px 140px 100px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
 .task-row:hover{background:var(--surface2)}
 .task-row.done-row{opacity:.5}
 
@@ -211,6 +213,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     </div>
   </div>
 
+  <div class="col-headers">
+    <div class="col-header"></div>
+    <div class="col-header">Task</div>
+    <div class="col-header">Section</div>
+    <div class="col-header">Assigned To</div>
+    <div class="col-header">Priority</div>
+    <div class="col-header"></div>
+  </div>
   <div id="task-list"></div>
 </div>
 
@@ -548,7 +558,13 @@ function render(){
 
       return `<div class="task-row${st==='done'?' done-row':''}">
         <div class="status-circle ${st}" onclick="cycleStatusPill('${id}')" title="Click to change status"></div>
-        <div class="task-name">${pri!=='standard'?`<span class="pri-${pri}">${pri.toUpperCase()}</span> `:''}${t.task}${getNotes(id)?`<div style="font-family:var(--mono);font-size:10px;color:#8b9eb0;margin-top:2px">${getNotes(id)}</div>`:''}</div>
+        <div class="task-name">
+          <div>${pri!=='standard'?`<span class="pri-${pri}">${pri.toUpperCase()}</span> `:''}${t.task}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+            <span class="status-pill ${st}" onclick="cycleStatusPill('${id}')">${{open:'○ PENDING',started:'● ACTIVE',done:'✓ DONE'}[st]}</span>
+            ${getNotes(id)?`<span style="font-family:var(--mono);font-size:10px;color:#8b9eb0">${getNotes(id)}</span>`:''}
+          </div>
+        </div>
         <select class="owner-select assigned" onchange="changeSection('${id}',this.value)">${secOpts}</select>
         <select class="assigned-select" onchange="changeAssignee('${id}',this.value)">${assOpts}</select>
         <select class="pri-select${pri!=='standard'?' '+pri:''}" onchange="changePriority('${id}',this.value)">
@@ -557,7 +573,6 @@ function render(){
           <option value="urgent"${pri==='urgent'?' selected':''}>URG</option>
         </select>
         <div class="task-due ${dueClass}" title="${due||'No due date'}">${dueStr}</div>
-        <div class="status-pill ${st}" onclick="cycleStatusPill('${id}')">${{open:'○ PENDING',started:'● ACTIVE',done:'✓ DONE'}[st]}</div>
         <button class="edit-btn" onclick="editTask('${id}')" title="Edit / Delete">&#9998;</button>
       </div>`;
     }).join('');
