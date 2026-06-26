@@ -55,7 +55,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 /* CONTROLS */
 .controls-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
 .col-headers{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:32px 1fr 160px 140px 100px 90px 22px;gap:8px;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;margin-bottom:4px}
-.col-header{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--text3);text-transform:uppercase}
+.col-header{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--text);text-transform:uppercase;font-weight:600}
 .ctrl-input{font-family:var(--mono);font-size:12px;flex:1;min-width:200px;padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text)}
 .ctrl-input:focus{outline:none;border-color:var(--gold)}
 .ctrl-select{font-family:var(--mono);font-size:11px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);cursor:pointer}
@@ -73,7 +73,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .section-progress{height:2px;background:var(--border)}
 .section-progress-fill{height:100%;transition:width .5s}
 /* TASK ROW */
-.task-row{display:grid;grid-template-columns:32px 1fr 160px 140px 100px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
+.task-row{display:grid;grid-template-columns:32px 1fr 160px 140px 90px 90px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
 .task-row:hover{background:var(--surface2)}
 .task-row.done-row{opacity:.5}
 
@@ -90,10 +90,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .pri-select{font-family:var(--mono);font-size:9px;padding:2px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer}
 .pri-select.urgent{color:#ff4444;border-color:rgba(255,68,68,.4);background:rgba(255,68,68,.08)}
 .pri-select.priority{color:var(--amber);border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.08)}
-.status-pill{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:3px;border:1px solid var(--border);color:var(--text3);cursor:pointer;white-space:nowrap;text-align:center}
-.status-pill.open{color:var(--text2);border-color:var(--border)}
-.status-pill.started{color:var(--amber);border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.06)}
-.status-pill.done{color:var(--green);border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.06)}
+.status-pill{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:3px;border:1px solid var(--border);color:var(--text3);cursor:pointer;white-space:nowrap;display:inline-block}
+.status-pill.open{color:#aaaaaa;border-color:var(--border);background:var(--surface2)}
+.status-pill.started{color:#000;border-color:var(--amber);background:var(--amber);font-weight:700}
+.status-pill.done{color:#000;border-color:var(--green);background:var(--green);font-weight:700}
 .status-circle{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .status-circle.open{border-color:var(--border)}
 .status-circle.started{border-color:var(--amber);background:rgba(210,153,34,.15)}
@@ -213,11 +213,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     </div>
   </div>
 
-  <div class="col-headers">
+  <div class="col-headers" style="grid-template-columns:32px 1fr 160px 140px 90px 90px 22px">
     <div class="col-header"></div>
     <div class="col-header">Task</div>
     <div class="col-header">Section</div>
     <div class="col-header">Assigned To</div>
+    <div class="col-header">Due Date</div>
     <div class="col-header">Priority</div>
     <div class="col-header"></div>
   </div>
