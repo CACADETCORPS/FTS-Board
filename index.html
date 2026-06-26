@@ -562,7 +562,7 @@ function render(){
         <div class="task-name">
           <div>${pri!=='standard'?`<span class="pri-${pri}">${pri.toUpperCase()}</span> `:''}${t.task}</div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
-            <span class="status-pill ${st}" onclick="cycleStatusPill('${id}')">${{open:'○ PENDING',started:'● ACTIVE',done:'✓ DONE'}[st]}</span>
+            <span class="status-pill ${st}" onclick="cycleStatusPill('${id}')">${{open:'○ PENDING',started:'● IN PROGRESS',done:'✓ DONE'}[st]}</span>
             ${getNotes(id)?`<span style="font-family:var(--mono);font-size:10px;color:#8b9eb0">${getNotes(id)}</span>`:''}
           </div>
         </div>
@@ -583,7 +583,10 @@ function render(){
         <div class="section-title" style="color:${color}">${secLabel}</div>
         <div class="section-count">${done}/${secTasks.length} complete</div>
       </div>
-      <div class="section-progress"><div class="section-progress-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="section-progress" style="display:flex">
+        <div style="height:2px;background:var(--amber);width:${Math.round(100*secTasks.filter(t=>getStatus(t.id)==='started').length/secTasks.length)}%;transition:width .5s"></div>
+        <div style="height:2px;background:var(--green);width:${pct}%;transition:width .5s"></div>
+      </div>
       ${rows}
     </div>`;
   }).join('');
@@ -603,7 +606,21 @@ function updateStats(){
   document.getElementById('s-active').textContent = active;
   document.getElementById('s-overdue').textContent= overdue;
   document.getElementById('s-unassigned').textContent = unassigned;
-  document.getElementById('progress-fill').style.width = pct+'%';
+  const activePct = total?Math.round(100*active/total):0;
+  const progressBar = document.getElementById('progress-fill');
+  progressBar.style.width = pct+'%';
+  // Also update a secondary amber bar for active
+  let activeBar = document.getElementById('progress-active');
+  if(!activeBar){
+    activeBar = document.createElement('div');
+    activeBar.id = 'progress-active';
+    activeBar.style.cssText = 'height:100%;background:var(--amber);transition:width .5s;position:absolute;left:0;top:0';
+    progressBar.parentElement.style.position='relative';
+    progressBar.parentElement.appendChild(activeBar);
+  }
+  activeBar.style.width = (pct+activePct)+'%';
+  progressBar.style.zIndex='1';
+  activeBar.style.zIndex='0';
 }
 
 // ── STATUS CHANGES ────────────────────────────────────────────────────────────
