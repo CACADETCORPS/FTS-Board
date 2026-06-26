@@ -54,6 +54,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .panel.active{display:block}
 /* CONTROLS */
 .controls-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.multi-select-wrap{position:relative;display:inline-block}
+.multi-select-btn{font-family:var(--mono);font-size:11px;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);cursor:pointer;white-space:nowrap;min-width:140px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.multi-select-btn:hover{border-color:var(--gold)}
+.multi-select-btn.active-filter{border-color:var(--gold);color:var(--gold)}
+.multi-select-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:4px;z-index:50;padding:6px 0;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.multi-select-dropdown.open{display:block}
+.multi-select-item{display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--text2)}
+.multi-select-item:hover{background:var(--surface2);color:var(--text)}
+.multi-select-item input{accent-color:var(--gold);cursor:pointer}
+.multi-select-clear{font-family:var(--mono);font-size:10px;color:var(--text3);padding:5px 12px;border-top:1px solid var(--border);cursor:pointer;margin-top:4px}
+.multi-select-clear:hover{color:var(--gold)}
 .col-headers{position:sticky;top:0;z-index:10;display:grid;grid-template-columns:32px 1fr 160px 140px 100px 90px 22px;gap:8px;padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;margin-bottom:4px}
 .col-header{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--text);text-transform:uppercase;font-weight:600}
 .ctrl-input{font-family:var(--mono);font-size:12px;flex:1;min-width:200px;padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text)}
@@ -463,16 +474,8 @@ function formatDue(due){
 
 // ── POPULATE FILTERS ──────────────────────────────────────────────────────────
 function populateFilters(){
-  const fSec = document.getElementById('f-section');
-  const cur  = fSec.value;
-  fSec.innerHTML = '<option value="">All sections</option>' +
-    allSections().map(s=>`<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
-
-  const fAss = document.getElementById('f-assignee');
-  const curA = fAss.value;
-  fAss.innerHTML = '<option value="">All assignees</option>' +
-    allAssignees().map(a=>`<option value="${a}"${a===curA?' selected':''}>${a}</option>`).join('');
-
+  buildMultiSelectItems('section');
+  buildMultiSelectItems('assignee');
   // Also rebuild add/edit dropdowns
   const nt = document.getElementById('new-task-section');
   if(nt) rebuildSelectOpts(nt, nt.value, '-- Section --');
@@ -486,8 +489,8 @@ const PRI_ORDER    = {'urgent':0,'priority':1,'standard':2};
 
 function render(){
   const search   = document.getElementById('search').value.toLowerCase();
-  const fSection = document.getElementById('f-section').value;
-  const fAssignee= document.getElementById('f-assignee').value;
+  const fSection  = selectedSections;
+  const fAssignee = selectedAssignees;
   const fsOpen   = document.getElementById('fs-open')?.checked??true;
   const fsStarted= document.getElementById('fs-started')?.checked??true;
   const fsDone   = document.getElementById('fs-done')?.checked??true;
@@ -500,8 +503,8 @@ function render(){
     if(st==='open'    && !fsOpen)    return false;
     if(st==='started' && !fsStarted) return false;
     if(st==='done'    && !fsDone)    return false;
-    if(fSection  && sec!==fSection)  return false;
-    if(fAssignee && ass!==fAssignee) return false;
+    if(fSection.size>0  && !fSection.has(sec))   return false;
+    if(fAssignee.size>0 && !fAssignee.has(ass))  return false;
     if(search && !t.task.toLowerCase().includes(search) && !getNotes(t.id).toLowerCase().includes(search)) return false;
     return true;
   });
@@ -879,6 +882,68 @@ function deleteArchive(idx){
   saveLocal();
   pushToWorker('sync_archive', archivedTasks);
   render();
+}
+
+// ── MULTI-SELECT FILTERS ─────────────────────────────────────────────────────
+let selectedSections  = new Set();
+let selectedAssignees = new Set();
+
+function toggleMultiSelect(type){
+  const dd = document.getElementById('dd-'+type);
+  const others = type==='section'?'dd-assignee':'dd-section';
+  document.getElementById(others).classList.remove('open');
+  dd.classList.toggle('open');
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.multi-select-wrap')){
+    document.querySelectorAll('.multi-select-dropdown').forEach(d=>d.classList.remove('open'));
+  }
+});
+
+function clearMultiSelect(type){
+  if(type==='section') selectedSections.clear();
+  else selectedAssignees.clear();
+  buildMultiSelectItems(type);
+  updateMultiSelectLabel(type);
+  render();
+}
+
+function buildMultiSelectItems(type){
+  const container = document.getElementById('dd-'+type+'-items');
+  const items = type==='section' ? allSections() : allAssignees();
+  const selected = type==='section' ? selectedSections : selectedAssignees;
+  if(!items.length){
+    container.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:6px 12px">None available</div>';
+    return;
+  }
+  container.innerHTML = items.map(item=>`
+    <label class="multi-select-item">
+      <input type="checkbox" ${selected.has(item)?'checked':''} onchange="toggleFilterItem('${type}','${item.replace(/'/g,"\\'")}',this.checked)">
+      ${item}
+    </label>`).join('');
+}
+
+function toggleFilterItem(type, val, checked){
+  const selected = type==='section' ? selectedSections : selectedAssignees;
+  if(checked) selected.add(val);
+  else selected.delete(val);
+  updateMultiSelectLabel(type);
+  render();
+}
+
+function updateMultiSelectLabel(type){
+  const selected = type==='section' ? selectedSections : selectedAssignees;
+  const lbl = document.getElementById('lbl-'+type);
+  const btn = document.getElementById('btn-'+type);
+  if(selected.size===0){
+    lbl.textContent = type==='section'?'All Sections':'All Assignees';
+    btn.classList.remove('active-filter');
+  } else {
+    lbl.textContent = selected.size===1?[...selected][0]:selected.size+' selected';
+    btn.classList.add('active-filter');
+  }
 }
 
 function initBoard(){
