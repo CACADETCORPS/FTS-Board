@@ -560,8 +560,9 @@ function render(){
       return `<div class="task-row${st==='done'?' done-row':''}">
         <div class="status-circle ${st}" onclick="cycleStatusPill('${id}')" title="Click to change status"></div>
         <div class="task-name">
-          <div>${pri!=='standard'?`<span class="pri-${pri}">${pri.toUpperCase()}</span> `:''}${t.task}</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+          ${pri!=='standard'?`<div style="margin-bottom:3px"><span class="pri-${pri}">${pri.toUpperCase()}</span></div>`:''}
+          <div style="font-size:14px;color:var(--text);line-height:1.3">${t.task}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
             <span class="status-pill ${st}" onclick="cycleStatusPill('${id}')">${{open:'○ PENDING',started:'● IN PROGRESS',done:'✓ DONE'}[st]}</span>
             ${getNotes(id)?`<span style="font-family:var(--mono);font-size:10px;color:#8b9eb0">${getNotes(id)}</span>`:''}
           </div>
