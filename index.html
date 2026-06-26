@@ -156,11 +156,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 <div class="stats" id="stats-bar">
   <div class="stat-card"><div class="stat-label">TOTAL</div><div class="stat-val" id="s-total">0</div></div>
   <div class="stat-card complete"><div class="stat-label">COMPLETE</div><div class="stat-val" id="s-done">0</div><div class="stat-sub" id="s-pct">0% complete</div></div>
-  <div class="stat-card active"><div class="stat-label">ACTIVE</div><div class="stat-val" id="s-active">0</div></div>
+  <div class="stat-card active"><div class="stat-label">IN PROGRESS</div><div class="stat-val" id="s-active">0</div></div>
   <div class="stat-card overdue"><div class="stat-label">OVERDUE</div><div class="stat-val" id="s-overdue">0</div></div>
   <div class="stat-card unassigned"><div class="stat-label">UNASSIGNED</div><div class="stat-val" id="s-unassigned">0</div></div>
 </div>
-<div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+<div class="progress-bar" style="position:relative"><div id="progress-active" style="position:absolute;left:0;top:0;height:100%;background:var(--amber);transition:width .5s;width:0%"></div><div class="progress-fill" id="progress-fill" style="width:0%;position:relative;z-index:1"></div></div>
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('tasks',this)">TASKS</button>
@@ -213,13 +213,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     </div>
   </div>
 
-  <div class="col-headers" style="grid-template-columns:32px 1fr 160px 140px 90px 90px 22px">
+  <div class="col-headers" style="grid-template-columns:32px 1fr 160px 140px 90px 90px 22px;margin-bottom:0">
     <div class="col-header"></div>
-    <div class="col-header">Task</div>
-    <div class="col-header">Section</div>
-    <div class="col-header">Assigned To</div>
-    <div class="col-header">Due Date</div>
-    <div class="col-header">Priority</div>
+    <div class="col-header">TASK</div>
+    <div class="col-header">SECTION</div>
+    <div class="col-header">ASSIGNED TO</div>
+    <div class="col-header">DUE DATE</div>
+    <div class="col-header">PRIORITY</div>
     <div class="col-header"></div>
   </div>
   <div id="task-list"></div>
