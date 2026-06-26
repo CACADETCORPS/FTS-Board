@@ -71,10 +71,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .section-progress{height:2px;background:var(--border)}
 .section-progress-fill{height:100%;transition:width .5s}
 /* TASK ROW */
-.task-row{display:grid;grid-template-columns:32px 1fr 110px 110px 90px 70px 80px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
+.task-row{display:grid;grid-template-columns:1fr 110px 110px 90px 70px 80px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
 .task-row:hover{background:var(--surface2)}
 .task-row.done-row{opacity:.5}
-.task-check{width:18px;height:18px;cursor:pointer;accent-color:var(--green)}
+
 .task-name{font-size:14px;color:var(--text);line-height:1.4}
 .task-due{font-family:var(--mono);font-size:10px;color:var(--text2)}
 .task-due.overdue{color:var(--red);font-weight:700}
@@ -538,7 +538,6 @@ function render(){
       const assOpts = '<option value="">— assignee —</option>'+allAssignees().map(a=>`<option value="${a}"${ass===a?' selected':''}>${a}</option>`).join('')+'<option value="__new__">+ Add name...</option>';
 
       return `<div class="task-row${st==='done'?' done-row':''}">
-        <input type="checkbox" class="task-check" ${st==='done'?'checked':''} onchange="cycleStatus('${id}',this.checked)">
         <div class="task-name">${pri!=='standard'?`<span class="pri-${pri}">${pri.toUpperCase()}</span> `:''}${t.task}${getNotes(id)?`<div style="font-family:var(--mono);font-size:10px;color:#8b9eb0;margin-top:2px">${getNotes(id)}</div>`:''}</div>
         <select class="owner-select assigned" onchange="changeSection('${id}',this.value)">${secOpts}</select>
         <select class="assigned-select" onchange="changeAssignee('${id}',this.value)">${assOpts}</select>
@@ -582,13 +581,6 @@ function updateStats(){
 }
 
 // ── STATUS CHANGES ────────────────────────────────────────────────────────────
-function cycleStatus(id, checked){
-  localStatus[id] = checked?'done':'open';
-  saveLocal();
-  pushToWorker('bulk_status',{[id]:localStatus[id]});
-  render(); updateStats();
-}
-
 function cycleStatusPill(id){
   const cur = getStatus(id);
   const next = {open:'started',started:'done',done:'open'}[cur];
