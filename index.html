@@ -488,9 +488,10 @@ const STATUS_ORDER = {'open':0,'started':1,'done':2};
 const PRI_ORDER    = {'urgent':0,'priority':1,'standard':2};
 
 function render(){
+  try{
   const search   = document.getElementById('search').value.toLowerCase();
-  const fSection  = selectedSections;
-  const fAssignee = selectedAssignees;
+  const fSection  = selectedSections||new Set();
+  const fAssignee = selectedAssignees||new Set();
   const fsOpen   = document.getElementById('fs-open')?.checked??true;
   const fsStarted= document.getElementById('fs-started')?.checked??true;
   const fsDone   = document.getElementById('fs-done')?.checked??true;
@@ -624,6 +625,7 @@ function render(){
       ${rows}
     </div>`;
   }).join('') + archiveHTML;
+  }catch(e){console.error('Render error:',e);}
 }
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
@@ -918,17 +920,23 @@ function buildMultiSelectItems(type){
     container.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:6px 12px">None available</div>';
     return;
   }
-  container.innerHTML = items.map(item=>`
+  container.innerHTML = items.map((item,idx)=>`
     <label class="multi-select-item">
-      <input type="checkbox" ${selected.has(item)?'checked':''} onchange="toggleFilterItem('${type}','${item.replace(/'/g,"\\'")}',this.checked)">
+      <input type="checkbox" data-type="${type}" data-idx="${idx}" ${selected.has(item)?'checked':''} onchange="toggleFilterItem(this)">
       ${item}
     </label>`).join('');
+  // Store items array for lookup
+  container._items = items;
 }
 
-function toggleFilterItem(type, val, checked){
+function toggleFilterItem(el){
+  const type = el.dataset.type;
+  const idx  = parseInt(el.dataset.idx);
+  const container = document.getElementById('dd-'+type+'-items');
+  const item = container._items[idx];
   const selected = type==='section' ? selectedSections : selectedAssignees;
-  if(checked) selected.add(val);
-  else selected.delete(val);
+  if(el.checked) selected.add(item);
+  else selected.delete(item);
   updateMultiSelectLabel(type);
   render();
 }
