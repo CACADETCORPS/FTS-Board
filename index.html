@@ -211,15 +211,27 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   <!-- FILTERS -->
   <div class="controls-bar">
     <input class="ctrl-input" type="text" id="search" placeholder="Search tasks..." oninput="render()">
-    <select class="ctrl-select" id="f-section" onchange="render()">
-      <option value="">All sections</option>
-    </select>
-    <select class="ctrl-select" id="f-assignee" onchange="render()">
-      <option value="">All assignees</option>
-    </select>
+    <div class="multi-select-wrap" id="wrap-section">
+      <button class="multi-select-btn" id="btn-section" onclick="toggleMultiSelect('section')">
+        <span id="lbl-section">All Sections</span><span>&#9660;</span>
+      </button>
+      <div class="multi-select-dropdown" id="dd-section">
+        <div id="dd-section-items"></div>
+        <div class="multi-select-clear" onclick="clearMultiSelect('section')">Clear selection</div>
+      </div>
+    </div>
+    <div class="multi-select-wrap" id="wrap-assignee">
+      <button class="multi-select-btn" id="btn-assignee" onclick="toggleMultiSelect('assignee')">
+        <span id="lbl-assignee">All Assignees</span><span>&#9660;</span>
+      </button>
+      <div class="multi-select-dropdown" id="dd-assignee">
+        <div id="dd-assignee-items"></div>
+        <div class="multi-select-clear" onclick="clearMultiSelect('assignee')">Clear selection</div>
+      </div>
+    </div>
     <div id="f-status-group" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px">
       <label style="color:var(--text2)"><input type="checkbox" id="fs-open" checked onchange="render()"> PENDING</label>
-      <label style="color:var(--amber)"><input type="checkbox" id="fs-started" checked onchange="render()"> ACTIVE</label>
+      <label style="color:var(--amber)"><input type="checkbox" id="fs-started" checked onchange="render()"> IN PROGRESS</label>
       <label style="color:var(--green)"><input type="checkbox" id="fs-done" checked onchange="render()"> COMPLETE</label>
     </div>
   </div>
