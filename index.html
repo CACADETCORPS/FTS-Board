@@ -71,7 +71,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .section-progress{height:2px;background:var(--border)}
 .section-progress-fill{height:100%;transition:width .5s}
 /* TASK ROW */
-.task-row{display:grid;grid-template-columns:1fr 180px 150px 75px 100px 110px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
+.task-row{display:grid;grid-template-columns:32px 1fr 160px 140px 100px 90px 22px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;align-items:center;background:var(--bg);transition:background .15s}
 .task-row:hover{background:var(--surface2)}
 .task-row.done-row{opacity:.5}
 
@@ -88,7 +88,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .pri-select{font-family:var(--mono);font-size:9px;padding:2px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer}
 .pri-select.urgent{color:#ff4444;border-color:rgba(255,68,68,.4);background:rgba(255,68,68,.08)}
 .pri-select.priority{color:var(--amber);border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.08)}
-.status-pill{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:5px 10px;border-radius:3px;border:1px solid var(--border);color:var(--text2);cursor:pointer;white-space:nowrap;text-align:center;font-weight:600}
+.status-pill{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:3px;border:1px solid var(--border);color:var(--text3);cursor:pointer;white-space:nowrap;text-align:center}
+.status-pill.open{color:var(--text2);border-color:var(--border)}
+.status-pill.started{color:var(--amber);border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.06)}
+.status-pill.done{color:var(--green);border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.06)}
+.status-circle{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.status-circle.open{border-color:var(--border)}
+.status-circle.started{border-color:var(--amber);background:rgba(210,153,34,.15)}
+.status-circle.started::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--amber)}
+.status-circle.done{border-color:var(--green);background:rgba(63,185,80,.2)}
+.status-circle.done::after{content:"✓";color:var(--green);font-size:13px;font-weight:700}
 .status-pill.open{color:var(--text2);border-color:var(--border)}
 .status-pill.started{color:var(--amber);border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.06)}
 .status-pill.done{color:var(--green);border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.06)}
@@ -538,6 +547,7 @@ function render(){
       const assOpts = '<option value="">— assignee —</option>'+allAssignees().map(a=>`<option value="${a}"${ass===a?' selected':''}>${a}</option>`).join('')+'<option value="__new__">+ Add name...</option>';
 
       return `<div class="task-row${st==='done'?' done-row':''}">
+        <div class="status-circle ${st}" onclick="cycleStatusPill('${id}')" title="Click to change status"></div>
         <div class="task-name">${pri!=='standard'?`<span class="pri-${pri}">${pri.toUpperCase()}</span> `:''}${t.task}${getNotes(id)?`<div style="font-family:var(--mono);font-size:10px;color:#8b9eb0;margin-top:2px">${getNotes(id)}</div>`:''}</div>
         <select class="owner-select assigned" onchange="changeSection('${id}',this.value)">${secOpts}</select>
         <select class="assigned-select" onchange="changeAssignee('${id}',this.value)">${assOpts}</select>
@@ -547,7 +557,7 @@ function render(){
           <option value="urgent"${pri==='urgent'?' selected':''}>URG</option>
         </select>
         <div class="task-due ${dueClass}" title="${due||'No due date'}">${dueStr}</div>
-        <div class="status-pill ${st}" onclick="cycleStatusPill('${id}')" style="cursor:pointer">${{open:'⭕ PENDING',started:'🔵 ACTIVE',done:'✅ COMPLETE'}[st]}</div>
+        <div class="status-pill ${st}" onclick="cycleStatusPill('${id}')">${{open:'○ PENDING',started:'● ACTIVE',done:'✓ DONE'}[st]}</div>
         <button class="edit-btn" onclick="editTask('${id}')" title="Edit / Delete">&#9998;</button>
       </div>`;
     }).join('');
