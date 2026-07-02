@@ -569,28 +569,7 @@ function render(){
   }
 
   // Build archive section HTML
-  const archiveHTML = archivedTasks.length ? `
-    <div class="section-group" style="margin-top:24px;opacity:.8">
-      <div class="section-header" style="cursor:pointer" onclick="this.nextElementSibling.nextElementSibling.style.display=this.nextElementSibling.nextElementSibling.style.display==='none'?'block':'none'">
-        <div class="section-title" style="color:var(--text3)">📦 ARCHIVE <span style="font-size:12px;font-weight:400">(${archivedTasks.length} tasks)</span></div>
-        <div class="section-count" style="color:var(--text3)">click to expand/collapse</div>
-      </div>
-      <div style="height:2px;background:var(--border2)"></div>
-      <div style="display:none">
-        ${archivedTasks.map((a,i)=>`
-        <div style="display:grid;grid-template-columns:1fr 160px 140px 130px 90px 80px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;background:var(--bg);align-items:center;opacity:.7">
-          <div>
-            <div style="font-size:13px;color:var(--text2);text-decoration:line-through">${a.task}</div>
-            <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px">ARCHIVED ${a.archivedAt}</div>
-          </div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--text3)">${a.section||'—'}</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--text3)">${a.assignee||'—'}</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--green)">✓ COMPLETE</div>
-          <button onclick="restoreArchive(${i})" style="font-family:var(--mono);font-size:9px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">RESTORE</button>
-          <button onclick="deleteArchive(${i})" style="font-family:var(--mono);font-size:9px;padding:3px 8px;background:none;border:1px solid rgba(248,81,73,.3);border-radius:3px;color:var(--red);cursor:pointer">DELETE</button>
-        </div>`).join('')}
-      </div>
-    </div>` : '';
+  const archiveHTML = renderArchiveSection();
 
   el.innerHTML = sortedSections.map(sec=>{
     const secTasks = bySection[sec];
@@ -979,6 +958,27 @@ function updateMultiSelectLabel(type){
 
 // ── SUBTASKS ──────────────────────────────────────────────────────────────────
 function getSubtasks(id){ return localSubtasks[id]||[]; }
+
+function renderArchiveSection(){
+  if(!archivedTasks.length) return '';
+  var rows='';
+  archivedTasks.forEach(function(a,i){
+    rows+='<div style="display:grid;grid-template-columns:1fr 160px 140px 90px 80px;gap:8px;padding:9px 12px;border:1px solid var(--border2);border-top:none;background:var(--bg);align-items:center;opacity:.7">';
+    rows+='<div><div style="font-size:13px;color:var(--text2);text-decoration:line-through">'+a.task+'</div>';
+    rows+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px">ARCHIVED '+a.archivedAt+'</div></div>';
+    rows+='<div style="font-family:var(--mono);font-size:10px;color:var(--text3)">'+(a.section||'—')+'</div>';
+    rows+='<div style="font-family:var(--mono);font-size:10px;color:var(--text3)">'+(a.assignee||'—')+'</div>';
+    rows+='<button onclick="restoreArchive('+i+')" style="font-family:var(--mono);font-size:9px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">RESTORE</button>';
+    rows+='<button onclick="deleteArchive('+i+')" style="font-family:var(--mono);font-size:9px;padding:3px 8px;background:none;border:1px solid rgba(248,81,73,.3);border-radius:3px;color:var(--red);cursor:pointer">DELETE</button>';
+    rows+='</div>';
+  });
+  return '<div class="section-group" style="margin-top:24px;opacity:.8">'
+    +'<div class="section-header" style="cursor:pointer" onclick="var el=this.parentElement.querySelector('[data-archive]');el.style.display=el.style.display==='none'?'block':'none'">'
+    +'<div class="section-title" style="color:var(--text3)">&#128230; ARCHIVE <span style="font-size:12px;font-weight:400">('+archivedTasks.length+' tasks)</span></div>'
+    +'<div class="section-count" style="color:var(--text3)">click to expand/collapse</div></div>'
+    +'<div style="height:2px;background:var(--border2)"></div>'
+    +'<div data-archive style="display:none">'+rows+'</div></div>';
+}
 
 function renderSubtaskRows(id){
   const sts = getSubtasks(id);
