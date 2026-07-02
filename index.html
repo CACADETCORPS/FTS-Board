@@ -975,7 +975,7 @@ function renderArchiveSection(){
     rows+='</div>';
   });
   return '<div class="section-group" style="margin-top:24px;opacity:.8">'
-    +'<div class="section-header" style="cursor:pointer" onclick="var el=this.parentElement.querySelector('[data-archive]');el.style.display=el.style.display==='none'?'block':'none'">'
+    +'<div class="section-header" style="cursor:pointer" onclick="var el=this.parentElement.querySelector(&quot;[data-archive]&quot;);el.style.display=el.style.display===&quot;none&quot;?&quot;block&quot;:&quot;none&quot;">'
     +'<div class="section-title" style="color:var(--text3)">&#128230; ARCHIVE <span style="font-size:12px;font-weight:400">('+archivedTasks.length+' tasks)</span></div>'
     +'<div class="section-count" style="color:var(--text3)">click to expand/collapse</div></div>'
     +'<div style="height:2px;background:var(--border2)"></div>'
@@ -983,25 +983,32 @@ function renderArchiveSection(){
 }
 
 function renderSubtaskRows(id){
-  const sts = getSubtasks(id);
-  let out = '';
+  var sts = getSubtasks(id);
+  var out = '';
   sts.forEach(function(st){
+    var sid = st.id;
     out += '<div class="subtask-row">';
     out += '<span style="color:var(--text3);font-size:10px">&#8627;</span>';
-    out += '<input type="checkbox" class="subtask-check"'+(st.done?' checked':'')+' onchange="toggleSubtask(''+id+'',''+st.id+'')">';
-    out += '<span class="subtask-name'+(st.done?' done':'')+'">'+st.text+'</span>';
-    out += '<button class="subtask-del" onclick="deleteSubtask(''+id+'',''+st.id+'')">&#10005;</button>';
+    out += '<input type="checkbox" class="subtask-check"';
+    if(st.done) out += ' checked';
+    out += ' onchange="toggleSubtask(this.dataset.tid,this.dataset.sid)" data-tid="'+id+'" data-sid="'+sid+'">';
+    out += '<span class="subtask-name';
+    if(st.done) out += ' done';
+    out += '">'+st.text+'</span>';
+    out += '<button class="subtask-del" data-tid="'+id+'" data-sid="'+sid+'" onclick="deleteSubtask(this.dataset.tid,this.dataset.sid)">&#10005;</button>';
     out += '</div>';
   });
   out += '<div style="padding:3px 12px 6px 52px;border:1px solid var(--border2);border-top:none;background:var(--bg);display:flex;gap:6px">';
-  out += '<input id="new-subtask-'+id+'" type="text" placeholder="Add subtask..." onkeydown="if(event.key==='Enter')addSubtask(''+id+'')" style="font-family:var(--mono);font-size:11px;flex:1;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text)">';
-  out += '<button onclick="addSubtask(''+id+'')" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">+</button>';
+  out += '<input id="new-subtask-'+id+'" type="text" placeholder="Add subtask..." ';
+  out += 'data-tid="'+id+'" onkeydown="if(event.key===String.fromCharCode(13))addSubtask(this.dataset.tid)" ';
+  out += 'style="font-family:var(--mono);font-size:11px;flex:1;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text)">';
+  out += '<button data-tid="'+id+'" onclick="addSubtask(this.dataset.tid)" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">+</button>';
   out += '</div>';
   return out;
 }
 
 function addSubtask(taskId){
-  const input = document.getElementById('new-subtask-'+taskId);
+  var input = document.getElementById('new-subtask-'+taskId);
   if(!input) return;
   const text = input.value.trim();
   if(!text) return;
@@ -1014,14 +1021,14 @@ function addSubtask(taskId){
 }
 
 function toggleSubtask(taskId, stId){
-  const sts = localSubtasks[taskId]||[];
-  const st  = sts.find(s=>s.id===stId);
+  var sts = localSubtasks[taskId]||[];
+  var st  = sts.find(function(s){return s.id===stId;});
   if(st){ st.done=!st.done; saveLocal(); pushToWorker('sync_subtasks',localSubtasks); render(); }
 }
 
 function deleteSubtask(taskId, stId){
   if(!localSubtasks[taskId]) return;
-  localSubtasks[taskId]=localSubtasks[taskId].filter(s=>s.id!==stId);
+  localSubtasks[taskId]=localSubtasks[taskId].filter(function(s){return s.id!==stId;});
   saveLocal(); pushToWorker('sync_subtasks',localSubtasks); render();
 }
 
