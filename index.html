@@ -633,18 +633,7 @@ function render(){
         <div class="task-due ${dueClass}" title="${due||'No due date'}">${dueStr}</div>
         <button class="edit-btn" onclick="editTask('${id}')" title="Edit / Delete">&#9998;</button>
       </div>
-      ${getSubtasks(id).map(st=>`
-      <div class="subtask-row">
-        <span style="color:var(--text3);font-size:10px">↳</span>
-        <input type="checkbox" class="subtask-check" ${st.done?'checked':''} onchange="toggleSubtask('${id}','${st.id}')">
-        <span class="subtask-name${st.done?' done':''}">${st.text}</span>
-        <button class="subtask-del" onclick="deleteSubtask('${id}','${st.id}')">✕</button>
-      </div>`).join('')}
-      <div style="padding:3px 12px 6px 52px;border:1px solid var(--border2);border-top:none;background:var(--bg);display:flex;gap:6px">
-        <input id="new-subtask-${id}" type="text" placeholder="Add subtask..." onkeydown="if(event.key==='Enter')addSubtask('${id}')"
-          style="font-family:var(--mono);font-size:11px;flex:1;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text)">
-        <button onclick="addSubtask('${id}')" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">+</button>
-      </div>\`;
+      ${renderSubtaskRows(id)}`;
     }).join('');
 
     return `<div class="section-group">
@@ -990,6 +979,24 @@ function updateMultiSelectLabel(type){
 
 // ── SUBTASKS ──────────────────────────────────────────────────────────────────
 function getSubtasks(id){ return localSubtasks[id]||[]; }
+
+function renderSubtaskRows(id){
+  const sts = getSubtasks(id);
+  let out = '';
+  sts.forEach(function(st){
+    out += '<div class="subtask-row">';
+    out += '<span style="color:var(--text3);font-size:10px">&#8627;</span>';
+    out += '<input type="checkbox" class="subtask-check"'+(st.done?' checked':'')+' onchange="toggleSubtask(''+id+'',''+st.id+'')">';
+    out += '<span class="subtask-name'+(st.done?' done':'')+'">'+st.text+'</span>';
+    out += '<button class="subtask-del" onclick="deleteSubtask(''+id+'',''+st.id+'')">&#10005;</button>';
+    out += '</div>';
+  });
+  out += '<div style="padding:3px 12px 6px 52px;border:1px solid var(--border2);border-top:none;background:var(--bg);display:flex;gap:6px">';
+  out += '<input id="new-subtask-'+id+'" type="text" placeholder="Add subtask..." onkeydown="if(event.key==='Enter')addSubtask(''+id+'')" style="font-family:var(--mono);font-size:11px;flex:1;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text)">';
+  out += '<button onclick="addSubtask(''+id+'')" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">+</button>';
+  out += '</div>';
+  return out;
+}
 
 function addSubtask(taskId){
   const input = document.getElementById('new-subtask-'+taskId);
