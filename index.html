@@ -511,6 +511,12 @@ const PRI_ORDER    = {'urgent':0,'priority':1,'standard':2};
 
 function render(){
   try{
+  // Save any active subtask inputs before re-render wipes them
+  var savedSubtaskInputs = {};
+  document.querySelectorAll('[id^="new-subtask-"]').forEach(function(el){
+    if(el.value) savedSubtaskInputs[el.id] = el.value;
+  });
+
   const search   = document.getElementById('search').value.toLowerCase();
   const fSection  = selectedSections||new Set();
   const fAssignee = selectedAssignees||new Set();
@@ -627,6 +633,11 @@ function render(){
       ${rows}
     </div>`;
   }).join('') + archiveHTML;
+  // Restore subtask input values after re-render
+  Object.keys(savedSubtaskInputs).forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = savedSubtaskInputs[id];
+  });
   }catch(e){console.error('Render error:',e);}
 }
 
