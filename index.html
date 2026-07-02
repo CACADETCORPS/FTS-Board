@@ -922,12 +922,14 @@ function buildMultiSelectItems(type){
     container.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:6px 12px">None available</div>';
     return;
   }
-  container.innerHTML = items.map((item,idx)=>`
-    <label class="multi-select-item">
-      <input type="checkbox" data-type="${type}" data-idx="${idx}" ${selected.has(item)?'checked':''} onchange="toggleFilterItem(this)">
-      ${item}
-    </label>`).join('');
-  // Store items array for lookup
+  var itemsHTML = '';
+  items.forEach(function(item, idx){
+    itemsHTML += '<label class="multi-select-item">';
+    itemsHTML += '<input type="checkbox" data-type="'+type+'" data-idx="'+idx+'"'+(selected.has(item)?' checked':'')+' onchange="toggleFilterItem(this)">';
+    itemsHTML += item;
+    itemsHTML += '</label>';
+  });
+  container.innerHTML = itemsHTML;
   container._items = items;
 }
 
