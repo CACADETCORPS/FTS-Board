@@ -384,6 +384,7 @@ let localPriority= {};
 let localDue     = {};
 let localNotes   = {};
 let editingId    = null;
+let blockRender  = false; // true while subtask input is focused
 
 // ── SYNC STATE ────────────────────────────────────────────────────────────────
 function setSyncState(s){
@@ -511,6 +512,7 @@ const PRI_ORDER    = {'urgent':0,'priority':1,'standard':2};
 
 function render(){
   try{
+  if(blockRender) return; // don't re-render while user is typing in a subtask input
   // Save any active subtask inputs before re-render wipes them
   var savedSubtaskInputs = {};
   document.querySelectorAll('[id^="new-subtask-"]').forEach(function(el){
@@ -1011,7 +1013,7 @@ function renderSubtaskRows(id){
   });
   out += '<div style="padding:3px 12px 6px 52px;border:1px solid var(--border2);border-top:none;background:var(--bg);display:flex;gap:6px">';
   out += '<input id="new-subtask-'+id+'" type="text" placeholder="Add subtask..." ';
-  out += 'data-tid="'+id+'" onkeydown="if(event.key===String.fromCharCode(13))addSubtask(this.dataset.tid)" ';
+  out += 'data-tid="'+id+'" onfocus="blockRender=true" onblur="blockRender=false" onkeydown="if(event.key===String.fromCharCode(13))addSubtask(this.dataset.tid)" ';
   out += 'style="font-family:var(--mono);font-size:11px;flex:1;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text)">';
   out += '<button data-tid="'+id+'" onclick="addSubtask(this.dataset.tid)" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">+</button>';
   out += '</div>';
@@ -1026,6 +1028,7 @@ function addSubtask(taskId){
   if(!localSubtasks[taskId]) localSubtasks[taskId]=[];
   localSubtasks[taskId].push({id:'st_'+Date.now()+'_'+Math.floor(Math.random()*999),text,done:false});
   input.value='';
+  blockRender=false;
   saveLocal();
   pushToWorker('sync_subtasks',localSubtasks);
   render();
