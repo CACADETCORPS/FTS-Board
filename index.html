@@ -115,6 +115,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .status-pill.started{color:var(--amber);border-color:rgba(210,153,34,.4);background:rgba(210,153,34,.06)}
 .status-pill.done{color:var(--green);border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.06)}
 .edit-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px}
+.subtask-row{display:grid;grid-template-columns:20px 20px 1fr 22px;gap:6px;padding:5px 12px 5px 52px;border:1px solid var(--border2);border-top:none;background:var(--bg);align-items:center;opacity:.9}
+.subtask-row:hover{background:var(--surface2)}
+.subtask-check{width:14px;height:14px;cursor:pointer;accent-color:var(--green)}
+.subtask-name{font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.3}
+.subtask-name.done{text-decoration:line-through;opacity:.5}
+.subtask-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:1px 3px}
+.subtask-del:hover{color:var(--red)}
 .edit-btn:hover{color:var(--gold)}
 /* PRIORITY BADGES */
 .pri-urgent{color:#ff4444;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;padding:1px 5px;border:1px solid rgba(255,68,68,.4);border-radius:3px;background:rgba(255,68,68,.08);margin-right:4px}
@@ -199,7 +206,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       <option value="">-- Assignee --</option>
       <option value="__new__">+ Add name...</option>
     </select>
-    <input type="date" id="new-task-due" title="Due date (optional)" style="min-width:130px">
+    <input type="date" id="new-task-due" title="Due date (optional)" style="min-width:150px;font-family:var(--mono);font-size:12px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);color-scheme:dark">
     <select id="new-task-pri" style="min-width:100px">
       <option value="standard">STANDARD</option>
       <option value="priority">PRIORITY</option>
@@ -369,6 +376,7 @@ function rebuildAssigneeOpts(sel, selected){
 // ── DATA ──────────────────────────────────────────────────────────────────────
 let tasks        = [];
 let archivedTasks = [];
+let localSubtasks = {}; // {taskId: [{id,text,done}]}
 let localStatus  = {};
 let localSection = {};
 let localAssignee= {};
@@ -388,7 +396,7 @@ function setSyncState(s){
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 function saveLocal(){
   try{
-    localStorage.setItem(KEY,JSON.stringify({tasks,localStatus,localSection,localAssignee,localPriority,localDue,localNotes,customSections,customAssignees,archivedTasks}));
+    localStorage.setItem(KEY,JSON.stringify({tasks,localStatus,localSection,localAssignee,localPriority,localDue,localNotes,customSections,customAssignees,archivedTasks,localSubtasks}));
   }catch(e){}
 }
 
@@ -396,7 +404,8 @@ function loadLocal(){
   try{
     const d=JSON.parse(localStorage.getItem(KEY)||'{}');
     tasks         = d.tasks        || [];
-    archivedTasks = d.archivedTasks || [];
+    archivedTasks  = d.archivedTasks  || [];
+    localSubtasks  = d.localSubtasks   || {};
     localStatus   = d.localStatus  || {};
     localSection  = d.localSection || {};
     localAssignee = d.localAssignee|| {};
@@ -431,6 +440,7 @@ async function fetchAll(){
       // Worker is authoritative
       if(d.tasks)        tasks         = d.tasks;
       if(d.archivedTasks) archivedTasks = d.archivedTasks;
+      if(d.subtasks)      localSubtasks  = {...localSubtasks,...d.subtasks};
       if(d.statuses)     localStatus   = {...localStatus,...d.statuses};
       if(d.sections)     localSection  = {...localSection,...d.sections};
       if(d.assignees)    localAssignee = {...localAssignee,...d.assignees};
@@ -622,7 +632,19 @@ function render(){
         </select>
         <div class="task-due ${dueClass}" title="${due||'No due date'}">${dueStr}</div>
         <button class="edit-btn" onclick="editTask('${id}')" title="Edit / Delete">&#9998;</button>
-      </div>`;
+      </div>
+      ${getSubtasks(id).map(st=>`
+      <div class="subtask-row">
+        <span style="color:var(--text3);font-size:10px">↳</span>
+        <input type="checkbox" class="subtask-check" ${st.done?'checked':''} onchange="toggleSubtask('${id}','${st.id}')">
+        <span class="subtask-name${st.done?' done':''}">${st.text}</span>
+        <button class="subtask-del" onclick="deleteSubtask('${id}','${st.id}')">✕</button>
+      </div>`).join('')}
+      <div style="padding:3px 12px 6px 52px;border:1px solid var(--border2);border-top:none;background:var(--bg);display:flex;gap:6px">
+        <input id="new-subtask-${id}" type="text" placeholder="Add subtask..." onkeydown="if(event.key==='Enter')addSubtask('${id}')"
+          style="font-family:var(--mono);font-size:11px;flex:1;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text)">
+        <button onclick="addSubtask('${id}')" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);cursor:pointer">+</button>
+      </div>\`;
     }).join('');
 
     return `<div class="section-group">
@@ -964,6 +986,34 @@ function updateMultiSelectLabel(type){
     lbl.textContent = selected.size===1?[...selected][0]:selected.size+' selected';
     btn.classList.add('active-filter');
   }
+}
+
+// ── SUBTASKS ──────────────────────────────────────────────────────────────────
+function getSubtasks(id){ return localSubtasks[id]||[]; }
+
+function addSubtask(taskId){
+  const input = document.getElementById('new-subtask-'+taskId);
+  if(!input) return;
+  const text = input.value.trim();
+  if(!text) return;
+  if(!localSubtasks[taskId]) localSubtasks[taskId]=[];
+  localSubtasks[taskId].push({id:'st_'+Date.now()+'_'+Math.floor(Math.random()*999),text,done:false});
+  input.value='';
+  saveLocal();
+  pushToWorker('sync_subtasks',localSubtasks);
+  render();
+}
+
+function toggleSubtask(taskId, stId){
+  const sts = localSubtasks[taskId]||[];
+  const st  = sts.find(s=>s.id===stId);
+  if(st){ st.done=!st.done; saveLocal(); pushToWorker('sync_subtasks',localSubtasks); render(); }
+}
+
+function deleteSubtask(taskId, stId){
+  if(!localSubtasks[taskId]) return;
+  localSubtasks[taskId]=localSubtasks[taskId].filter(s=>s.id!==stId);
+  saveLocal(); pushToWorker('sync_subtasks',localSubtasks); render();
 }
 
 function initBoard(){
